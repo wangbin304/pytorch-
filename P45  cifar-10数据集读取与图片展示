@@ -53,3 +53,16 @@ print(' '.join('%11s' % classes[labels[j]] for j in range(4)))
 for j in range(0,4):
     plt.imshow(show((images[j] + 1) / 2).resize((100, 100)))
     plt.show()
+    
+    
+    
+## 遍历每一张图片和标签
+# for i in range(0,49999):
+#     (data, label) = trainset[i]
+#     print(classes[label])
+#
+#     show((data + 1) / 2).resize((100, 100))
+#     # print(data.size())
+#     plt.imshow(show((data + 1) / 2))
+#     # plt.imshow(show((data+1)/2).resize((100,100)))
+#     plt.show()
