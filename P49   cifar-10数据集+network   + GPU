@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import torchvision as tv
 import torch as t
@@ -33,7 +32,7 @@ trainset = tv.datasets.CIFAR10(
 )
 trainloader = t.utils.data.DataLoader(
     trainset,
-    batch_size=4,
+    batch_size=40,
     shuffle=True,
     num_workers=2
 )
@@ -48,7 +47,7 @@ testset = tv.datasets.CIFAR10(
 
 testloader = t.utils.data.DataLoader(
     testset,
-    batch_size=400,
+    batch_size=4,
     shuffle=False,
     num_workers=2
 )
@@ -93,22 +92,52 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
 start = time.time()
-# 训练网络
-for epoch in range(1):
+# # 训练网络
+# for epoch in range(2):
+#     running_loss = 0.0
+#     for i, data in enumerate(trainloader, 0):
+#         # 输入数据
+#         inputs, labels = data
+#         inputs, labels = Variable(inputs), Variable(labels)
+#         # 梯度清零
+#         optimizer.zero_grad()
+#         # forward+backward
+#         outputs = net(inputs)
+#         loss = criterion(outputs, labels)
+#
+#         loss.backward()
+#         # 更新参数
+#         optimizer.step()
+#         # 打印log信息
+#         # print(loss.data,running_loss,loss.data+running_loss)
+#         # print(loss.data)
+#         running_loss += loss.data
+#         if i % 2000 == 1999:
+#             print('[%d , %5d] loss %.3f' % (epoch + 1, i + 1, running_loss / 2000))
+#             running_loss = 0.0
+
+for epoch in range(2):
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
         # 输入数据
         inputs, labels = data
         inputs, labels = Variable(inputs), Variable(labels)
+
         # 梯度清零
         optimizer.zero_grad()
         # forward+backward
-        outputs = net(inputs)
-        loss = criterion(outputs, labels)
 
-        loss.backward()
+        # if t.cuda.is_available():
+        net.cuda()
+        inputs = inputs.cuda()
+        labels = labels.cuda()
+        output = net(Variable(inputs))
+        # outputs = net(inputs)
+        loss = criterion(output, labels)
+
+        # loss.backward()
         # 更新参数
-        optimizer.step()
+        # optimizer.step()
         # 打印log信息
         # print(loss.data,running_loss,loss.data+running_loss)
         # print(loss.data)
@@ -116,6 +145,7 @@ for epoch in range(1):
         if i % 2000 == 1999:
             print('[%d , %5d] loss %.3f' % (epoch + 1, i + 1, running_loss / 2000))
             running_loss = 0.0
+
 print('Finished Training')
 end = time.time()
 print((end - start))
@@ -134,19 +164,19 @@ print((end - start))
 # print('预测结果：', "*".join("%s" % classes[predicted[j]] for j in range(4)))
 
 
-# CPU  testset
-start1 = time.time()
-correct = 0
-total = 0
-for data in testloader:
-    images, labels = data
-    outputs = net(Variable(images))
-    _, predicted = t.max(outputs.data, 1)
-    total += labels.size(0)
-    correct += (predicted == labels).sum()
-print("10000张测试集中的准确率为：%d %%" % (100 * correct / total))
-end1 = time.time()
-print(end1 - start1)
+# # CPU  testset
+# start1 = time.time()
+# correct = 0
+# total = 0
+# for data in testloader:
+#     images, labels = data
+#     outputs = net(Variable(images))
+#     _, predicted = t.max(outputs.data, 1)
+#     total += labels.size(0)
+#     correct += (predicted == labels).sum()
+# print("10000张测试集中的准确率为：%d %%" % (100 * correct / total))
+# end1 = time.time()
+# print(end1 - start1)
 
 
 #  GPU testset
@@ -156,6 +186,7 @@ total = 0
 for data in testloader:
     images, labels = data
     if t.cuda.is_available():
+        net.cuda()
         images = images.cuda()
         labels = labels.cuda()
         output = net(Variable(images))
@@ -165,4 +196,3 @@ for data in testloader:
 print("10000张测试集中的准确率为：%d %%" % (100 * correct / total))
 end2 = time.time()
 print(end2 - start2)
-
