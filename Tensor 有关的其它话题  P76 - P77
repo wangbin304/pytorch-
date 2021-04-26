@@ -1,0 +1,126 @@
+
+1. 持久化
+
+import torch as t
+
+
+a=t.Tensor(3,4)
+if(t.cuda.is_available()):
+    # 将a转为GPU0上的tensor
+    a=a.cuda(0)
+    
+    # 保存文件
+    t.save(a,"a.pth")
+
+    # 加载b，存储在GPU0上
+    b=t.load('a.pth')
+
+    # 加载c ，  存储在cpu上
+    c=t.load('a.pth',map_location=lambda storage,loc: storage)
+
+    # 加载d ，  存储在GPU0上
+    d=t.load('a.pth',map_location={'cuda:1':"cuda:0"})
+    
+   
+   
+   
+   
+   
+2. 向量化
+
+import torch as t
+​
+def for_loop_add(x,y):
+    result=[]
+    for i,j in zip(x,y):
+        result.append(i+j)
+    return t.Tensor(result)
+​
+x=t.zeros(100)
+print(x.shape,x.size(),x.dtype)
+y=t.ones(100)
+​
+print(for_loop_add(x,y))
+print(x+y)
+​
+torch.Size([100]) torch.Size([100]) torch.float32
+tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
+tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
+%timeit -n 10 for_loop_add(x,y)
+404 µs ± 30.6 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+%timeit -n 10 x+y
+The slowest run took 24.81 times longer than the fastest. This could mean that an intermediate result is being cached.
+8.12 µs ± 15.3 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+
+
+
+
+
+
+import torch as t
+
+def for_loop_add(x,y):
+    result=[]
+    for i,j in zip(x,y):
+        result.append(i+j)
+    return t.Tensor(result)
+
+x=t.zeros(100)
+print(x.shape,x.size(),x.dtype)
+y=t.ones(100)
+
+print(for_loop_add(x,y))
+print(x+y)
+
+a=t.arange(0,20000000)
+print(a[-1],a[-2])
+b=t.LongTensor()
+print(b.dtype)
+t.arange(0,20000000,out=b)
+print(b[-1],b[-2])
+
+
+a=t.randn(2,3)
+print(a,a.dtype)
+
+t.set_printoptions(precision=10)
+print(a)
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+torch.Size([100]) torch.Size([100]) torch.float32
+tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
+tensor([1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.,
+        1., 1., 1., 1., 1., 1., 1., 1., 1., 1.])
+tensor(19999999) tensor(19999998)
+torch.int64
+tensor(19999999) tensor(19999998)
+tensor([[ 0.7692,  0.6859,  1.7868],
+        [-0.1646,  0.6080,  0.0349]]) torch.float32
+tensor([[ 0.7691893578,  0.6858541965,  1.7867676020],
+        [-0.1646483839,  0.6079842448,  0.0349367447]])
+
+Process finished with exit code 0
+
+    
+  
