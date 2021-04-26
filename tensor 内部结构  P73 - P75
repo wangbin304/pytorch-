@@ -1,0 +1,112 @@
+
+
+import torch as t
+
+# arange 类型为 int64  为了后面 让 d 也共享内存，将之修改为float
+a=t.arange(0,6).float()
+# a=t.arange(0,6)
+print(a.storage(),a.dtype)
+
+b=a.view(2,3)
+print(b.storage(),b.dtype)
+
+# 对象的id值可以看做它在内存中的地址，a b 地址一一对应
+print(id(b.storage())==id(a.storage()))
+
+a[1]=100
+print(b)
+
+c=a[2:]
+print(a[2:])
+print(c.storage())
+
+# 两者相差16个字节  int64  64bit 8个字节  2*8=16
+print(c.data_ptr(),a.data_ptr(),c.dtype)
+
+# c[0] id  ==  a[2] id
+c[0]=-100
+print(a)
+
+
+d=t.Tensor(c.storage())
+d[0]=6666
+print(b)
+
+
+print(id(a.storage())==id(b.storage())==id(c.storage())==id(d.storage()))
+
+
+print(a.storage_offset(),c.storage_offset(),d.storage_offset())
+
+# 隔两行取一个值
+e=b[::2,::2]
+print(b,'\n',e)
+print(id(e.storage())==id(a.storage()))
+
+print(b.stride(),'\n',e.stride())
+
+print(b.data_ptr(),'\n',d.data_ptr())
+print(e.is_contiguous())
+print(b.is_contiguous())
+
+
+# 改成连续的话，将会复制数据到新的内存，不再与原来的内存共享storage
+print(e.data_ptr())
+e=e.contiguous()
+print(e.data_ptr())
+print(e.is_contiguous())
+
+
+
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+ 0.0
+ 1.0
+ 2.0
+ 3.0
+ 4.0
+ 5.0
+[torch.FloatStorage of size 6] torch.float32
+ 0.0
+ 1.0
+ 2.0
+ 3.0
+ 4.0
+ 5.0
+[torch.FloatStorage of size 6] torch.float32
+True
+tensor([[  0., 100.,   2.],
+        [  3.,   4.,   5.]])
+tensor([2., 3., 4., 5.])
+ 0.0
+ 100.0
+ 2.0
+ 3.0
+ 4.0
+ 5.0
+[torch.FloatStorage of size 6]
+94025889682824 94025889682816 torch.float32
+tensor([   0.,  100., -100.,    3.,    4.,    5.])
+tensor([[ 6.6660e+03,  1.0000e+02, -1.0000e+02],
+        [ 3.0000e+00,  4.0000e+00,  5.0000e+00]])
+True
+0 2 0
+tensor([[ 6.6660e+03,  1.0000e+02, -1.0000e+02],
+        [ 3.0000e+00,  4.0000e+00,  5.0000e+00]]) 
+ tensor([[6666., -100.]])
+True
+(3, 1) 
+ (6, 2)
+94025889682816 
+ 94025889682816
+False
+True
+94025889682816
+94025927613696
+True
+
+Process finished with exit code 0
+
+
