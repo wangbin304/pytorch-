@@ -1,0 +1,79 @@
+
+
+import torch as t
+from matplotlib import pyplot as plt
+from IPython import display
+
+t.manual_seed(1000)
+
+
+def get_fake_data(batch_size=8):
+    # 产生随机数据： y=x*2+3 ， 加上一些噪声
+    x = t.rand(batch_size, 1) * 20
+    y = x * 2 + (1 + t.randn(batch_size, 1)) * 3
+    return x, y
+
+#
+# x, y = get_fake_data()
+# # print(x.squeeze().numpy(),y.squeeze().numpy())
+# plt.scatter(x.squeeze().numpy(), y.squeeze().numpy())
+# plt.show()
+#
+
+
+
+w = t.rand(1, 1)
+b = t.zeros(1, 1)
+
+lr = 0.001
+
+for ii in range(20000):
+    x, y = get_fake_data()
+    print(x,"\n",y)
+
+    # print(x.dtype,x,'\n',y.dtype,y)
+    # print(b,b.dtype)
+    y_pred = x.mm(w) + b.expand_as(y)
+    # print(b.expand_as(y),y)
+
+
+    loss = 0.5 * (y_pred - y) ** 2  # 均方误差
+    loss = loss.sum()
+
+    # print(loss,loss.dtype)
+    # input()
+    # backward
+    dloss = 1
+    dy_pred = dloss * (y_pred - y)
+
+    # print(x.shape)
+    # print(x.t())
+    # input()
+    dw = x.t().mm(dy_pred)
+    db = dy_pred.sum()
+
+    # 更新参数
+    w.sub_(lr * dw)
+    b.sub_(lr * db)
+
+    input()
+
+
+    print(w.squeeze(), b.squeeze())
+    # if ii % 1000 == 0:
+    #     # 画图
+    #     # display.clear_output(wait=True)
+    #     x = t.arange(0, 20).view(-1, 1)
+    #     # print(w.dtype,x.dtype)
+    #     y = x.mm(w.long()) + b.expand_as(x)
+    #     plt.plot(x.numpy(), y.numpy())  # predicted
+    #     # plt.show()
+    #
+    #     x2, y2 = get_fake_data(batch_size=20)
+    #     plt.scatter(x2.numpy(), y2.numpy())  # true data
+    #
+    #     plt.xlim(0, 20)
+    #     plt.ylim(0, 41)
+    #     plt.show()
+    #     plt.pause(0.5)
+    #     print(w.squeeze(), b.squeeze())
