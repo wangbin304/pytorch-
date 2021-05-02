@@ -1,0 +1,498 @@
+
+
+1. Variable
+
+  Pytorch 在 autograd 模块实现了计算图的相关功能，gutograd中的核心数据结构是Variable。
+  Variable封装了tensor，并记录对tensor的操作记录来构建计算图。
+  
+autograd.Variable
+
+包含三个属性：
+data： 保存了variable所包含的tensor。
+grad： 保存了data对应的梯度，grad也是variable，而非tensor，它与data形状一致。
+grad_fn： 指向一个Function，记录variable的操作历史，即它是什么操作的输出，用来构建计算图。如果某一个
+   变量是由用户创建的，则它为叶子节点，对应的 grad_fn 等于None。
+   
+   
+   
+   
+from __future__ import print_function
+import torch as t
+from torch.autograd import Variable as V
+
+
+a=V(t.ones(3,4), requires_grad = True)
+print(a,a.requires_grad,a.grad_fn)
+
+b=V(t.zeros(3,4))
+print(b,b.dtype,b.grad_fn)
+
+
+# 此处虽然没有指定c需要求导，但是c依赖于a，而a需要求导，因此c的requires_grad 属性会自动设为True
+# c=a+b
+c=a.add(b)
+print(c,c.dtype,c.requires_grad,c.grad_fn)
+
+
+f=c+2
+print("f=",f,f.requires_grad,f.grad_fn)
+
+g=f*3
+print("g=",g,g.requires_grad,g.grad_fn)
+#
+# d=c.sum()
+# print(d,d.dtype)
+#
+# d.backward()
+# print(d,d.dtype)
+#
+# print(c.data.sum())
+#
+# print(c.sum())
+#
+# print(a.requires_grad,b.requires_grad,c.requires_grad)
+#
+# print(a,"\n",a.grad)
+#
+#
+print(a.requires_grad,b.requires_grad,c.requires_grad)
+
+
+print(a.is_leaf,b.is_leaf,c.is_leaf)
+
+
+# c.grad 是 None， c不是叶子节点，它的梯度是用来计算a的梯度
+# 虽然c.requires_grad=True ,但是其梯度计算完之后即被释放
+print(c.grad,c.grad is None)
+
+if("I love you china" is "I love you china"):
+    print("hello world")
+    
+    
+    
+    
+    
+   
+   
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+tensor([[1., 1., 1., 1.],
+        [1., 1., 1., 1.],
+        [1., 1., 1., 1.]], requires_grad=True) True None
+tensor([[0., 0., 0., 0.],
+        [0., 0., 0., 0.],
+        [0., 0., 0., 0.]]) torch.float32 None
+tensor([[1., 1., 1., 1.],
+        [1., 1., 1., 1.],
+        [1., 1., 1., 1.]], grad_fn=<AddBackward0>) torch.float32 True <AddBackward0 object at 0x7f3bf1516610>
+f= tensor([[3., 3., 3., 3.],
+        [3., 3., 3., 3.],
+        [3., 3., 3., 3.]], grad_fn=<AddBackward0>) True <AddBackward0 object at 0x7f3bf1516610>
+g= tensor([[9., 9., 9., 9.],
+        [9., 9., 9., 9.],
+        [9., 9., 9., 9.]], grad_fn=<MulBackward0>) True <MulBackward0 object at 0x7f3bf1516610>
+True False True
+True True False
+None True
+hello world
+/home/wangbin/anaconda3/envs/deep_learning/project/main.py:48: UserWarning: The .grad attribute of a Tensor that is not a leaf Tensor is being accessed. Its .grad attribute won't be populated during autograd.backward(). If you indeed want the gradient for a non-leaf Tensor, use .retain_grad() on the non-leaf Tensor. If you access the non-leaf Tensor by mistake, make sure you access the leaf Tensor instead. See github.com/pytorch/pytorch/pull/30531 for more informations.
+  print(c.grad,c.grad is None)
+
+Process finished with exit code 0
+
+
+
+
+2. autograd求导与手动求导完全一致
+
+
+
+from __future__ import print_function
+import torch as t
+
+from torch.autograd import Variable as V
+
+
+def f(x):
+    y = x ** 2 * t.exp(x)
+    return y
+
+
+def gradf(x):
+    dx = 2 * x * t.exp(x) + x ** 2 * t.exp(x)
+    return dx
+
+
+
+# t.manual_seed(0)
+# x = t.randn(3, 4)
+# print("x=", x)
+# print("gradf(x)=", gradf(x))
+
+# t.manual_seed(0)
+x1 = V(t.randn(3, 4), requires_grad=True)
+print("x1=", x1)
+y = f(x1)
+print("y=", y, "\n", y.dtype, "\n", y.size())
+print("y.backward=", y.backward(t.ones(y.size())))
+
+print("x1.grad=", x1.grad)
+
+print("x1=", x1)
+
+# 手动求导和内置求导函数求出来的结果一样，说明autograd具有自动求导功能
+print("手动求导：",gradf(x1))
+
+print(x1.grad==gradf(x1))
+
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+x1= tensor([[-1.4735,  0.4611, -0.5092,  1.5622],
+        [-0.5428, -0.6144, -1.1769,  0.9139],
+        [ 1.1808, -1.4013,  0.2960,  0.0339]], requires_grad=True)
+y= tensor([[4.9747e-01, 3.3715e-01, 1.5582e-01, 1.1639e+01],
+        [1.7122e-01, 2.0421e-01, 4.2692e-01, 2.0828e+00],
+        [4.5410e+00, 4.8359e-01, 1.1781e-01, 1.1919e-03]],
+       grad_fn=<MulBackward0>) 
+ torch.float32 
+ torch.Size([3, 4])
+y.backward= None
+x1.grad= tensor([[-0.1777,  1.7996, -0.4562, 26.5401],
+        [-0.4596, -0.4605, -0.2986,  6.6410],
+        [12.2325, -0.2066,  0.9138,  0.0714]])
+x1= tensor([[-1.4735,  0.4611, -0.5092,  1.5622],
+        [-0.5428, -0.6144, -1.1769,  0.9139],
+        [ 1.1808, -1.4013,  0.2960,  0.0339]], requires_grad=True)
+手动求导： tensor([[-0.1777,  1.7996, -0.4562, 26.5401],
+        [-0.4596, -0.4605, -0.2986,  6.6410],
+        [12.2325, -0.2066,  0.9138,  0.0714]], grad_fn=<AddBackward0>)
+tensor([[True, True, True, True],
+        [True, True, True, True],
+        [True, True, True, True]])
+
+Process finished with exit code 0
+
+
+
+3. 计算图的概念
+
+
+from __future__ import print_function
+from torch.autograd import Variable as V
+import torch as t
+
+x=V(t.ones(1))
+print("x="+'\n',x,x.dtype)
+b=V(t.rand(1),requires_grad=True)
+print("b="+'\n',b,b.dtype)
+w=V(t.rand(1),requires_grad=True)
+print("w="+'\n',w,w.dtype)
+# y=w*x
+y=w.mul(x)
+print(w.mul(x)==w*x)
+
+print("y="+'\n',y,y.dtype)
+# z=y+b
+z=y.add(b)
+print(y.add(b)==y+b)
+print('z='+'\n',z,z.dtype)
+
+print(x.requires_grad,b.requires_grad,w.requires_grad)
+
+#虽然没有指定y,z为true，但是由于y依赖于w，所以y也为true，z同理
+print(y.requires_grad,z.requires_grad)
+
+# x,w,b是叶子节点，y、z不是
+print(x.is_leaf,y.is_leaf,z.is_leaf,w.is_leaf,b.is_leaf)
+
+# z是add函数的输出，所以它的反向传播函数是AddBackward
+print(z.grad_fn)
+
+# first ： y   mul的输出,对应mulbackward   second ： b  梯度是累加的
+print(z.grad_fn.next_functions)
+
+
+print(z.grad_fn.next_functions[0][0]==y.grad_fn)
+
+
+# first ： w  叶子，需要求导  second : x  叶子，不需要求导
+print(y.grad_fn.next_functions)
+
+# 叶子节点的grad_fn是None
+print(w.grad_fn,x.grad_fn,b.grad_fn)
+
+# saved_variables 属性在新版没有了
+# print(y.grad_fn.saved_variables())
+
+z.backward(retain_graph=True)
+print(w.grad)
+
+z.backward()
+print(w.grad)
+
+
+
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+x=
+ tensor([1.]) torch.float32
+b=
+ tensor([0.5768], requires_grad=True) torch.float32
+w=
+ tensor([0.9091], requires_grad=True) torch.float32
+tensor([True])
+y=
+ tensor([0.9091], grad_fn=<MulBackward0>) torch.float32
+tensor([True])
+z=
+ tensor([1.4859], grad_fn=<AddBackward0>) torch.float32
+False True True
+True True
+True False False True True
+<AddBackward0 object at 0x7f4cfe7baf90>
+((<MulBackward0 object at 0x7f4dd06bbb90>, 0), (<AccumulateGrad object at 0x7f4dd06bbb50>, 0))
+True
+((<AccumulateGrad object at 0x7f4dd06bbb50>, 0), (None, 0))
+None None None
+tensor([1.])
+tensor([2.])
+
+Process finished with exit code 0
+
+
+
+
+4. 计算图的应用
+
+
+from __future__ import print_function
+import torch as t
+from torch.autograd import Variable as V
+
+
+def abs(x):
+    if x.data > 0:
+        return 2*x
+    else:
+        return -2*x
+
+
+# x = V(t.ones(1,3), requires_grad=True)
+# tensor([[2., 2., 2.]])
+
+x=V(t.ones(1),requires_grad=True)
+y = abs(x)
+y.backward(t.ones_like(y))
+print(x.grad)
+
+x=V(-1*t.ones(1),requires_grad=True)
+y=abs(x)
+y.backward()
+print(x.grad)
+
+
+def f(x):
+    result=1
+    for ii in x:
+        if ii.data>0:
+            result=ii*result
+            print(result.data,result)
+        # print("hello world",result)
+    return result
+
+
+print(t.arange(-2.,4))
+x=V(t.arange(-2.,4),requires_grad=True)
+y=f(x)
+print("y=",y)  # y=x[3]*x[4]*x[5]
+y.backward()
+print(x.grad)
+
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+tensor([2.])
+tensor([-2.])
+tensor([-2., -1.,  0.,  1.,  2.,  3.])
+tensor(1.) tensor(1., grad_fn=<MulBackward0>)
+tensor(2.) tensor(2., grad_fn=<MulBackward0>)
+tensor(6.) tensor(6., grad_fn=<MulBackward0>)
+y= tensor(6., grad_fn=<MulBackward0>)
+tensor([0., 0., 0., 6., 3., 2.])
+
+Process finished with exit code 0
+
+
+
+
+
+
+5. volatile=True
+
+  volatile=True能够将所有依赖于它的节点全部设置为 volatile=True , 其优先级比requires_grad=True 高。
+volatile=True的节点不会求导，即使requires_grad=True，也无法进行反向传播。对于不需要反向传播的情景（如 inference,即
+测试推理时），该参数可实现一定程度的速度提升，并节省约一半显存，因为其不需要分配空间保存梯度。
+
+
+volatile参数在最新版中已经失效。
+
+已被更新为：
+
+with t.no_grad()：  
+     想要消除求导的节点
+
+
+from __future__ import print_function
+from torch.autograd import Variable as V
+import torch as t
+
+
+
+x=V(t.ones(1))
+w=V(t.rand(1),requires_grad=True)
+# no_grad()可以关闭求导功能
+y=x*w
+print(x.requires_grad,w.requires_grad,y.requires_grad)
+with t.no_grad():
+   y=x*w
+print(x.requires_grad,w.requires_grad,y.requires_grad)
+
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+False True True
+False True False
+
+Process finished with exit code 0
+
+
+
+
+6. autograd.grad函数、使用hook
+
+  反向传播过程中，非叶子节点的导数计算完之后即被清空，查看方法有
+1）autograd.grad 函数、  
+2）hook方法
+
+
+
+from __future__ import print_function
+from torch.autograd import Variable as V
+import torch as t
+
+t.manual_seed(0)
+x=V(t.ones(3),requires_grad=True)
+w=V(t.rand(3),requires_grad=True)
+y=x*w
+print(y)
+z=y.sum()
+print(x.requires_grad,w.requires_grad,y.requires_grad)
+
+z.backward()
+print(x.grad,w.grad,y.grad)
+
+# 方法1  grad  z对y的梯度，隐式调用backward()
+
+print(t.autograd.grad(z,y))
+
+# 方法2  hook
+
+# 注册hook  输入的是梯度，不应该有返回值
+def variable_hook(grad):
+   print("y的梯度：\r\n",grad)
+hook_handle=y.register_hook(variable_hook)
+z=y.sum()
+z.backward()
+
+# 除非 每次都用hook，否则应该移除hook
+
+hook_handle.remove()
+
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+tensor([0.4963, 0.7682, 0.0885], grad_fn=<MulBackward0>)
+True True True
+/home/wangbin/anaconda3/envs/deep_learning/project/main.py:14: UserWarning: The .grad attribute of a Tensor that is not a leaf Tensor is being accessed. Its .grad attribute won't be populated during autograd.backward(). If you indeed want the gradient for a non-leaf Tensor, use .retain_grad() on the non-leaf Tensor. If you access the non-leaf Tensor by mistake, make sure you access the leaf Tensor instead. See github.com/pytorch/pytorch/pull/30531 for more informations.
+  print(x.grad,w.grad,y.grad)
+Traceback (most recent call last):
+  File "/home/wangbin/anaconda3/envs/deep_learning/project/main.py", line 27, in <module>
+    z.backward()
+  File "/home/wangbin/anaconda3/envs/deep_learning/lib/python3.7/site-packages/torch/tensor.py", line 221, in backward
+    torch.autograd.backward(self, gradient, retain_graph, create_graph)
+  File "/home/wangbin/anaconda3/envs/deep_learning/lib/python3.7/site-packages/torch/autograd/__init__.py", line 132, in backward
+    allow_unreachable=True)  # allow_unreachable flag
+RuntimeError: Trying to backward through the graph a second time, but the saved intermediate results have already been freed. Specify retain_graph=True when calling backward the first time.
+tensor([0.4963, 0.7682, 0.0885]) tensor([1., 1., 1.]) None
+(tensor([1., 1., 1.]),)
+y的梯度：
+ tensor([1., 1., 1.])
+
+Process finished with exit code 1
+
+
+
+
+
+
+7. variable 中 grad属性 和 backward函数 grad_variables 参数的含义
+
+
+from __future__ import print_function
+from torch.autograd import Variable as V
+import torch as t
+
+
+# z.backward() <<==>> y.backward(grad_y)
+# 省略了grad_variables 参数，因为z是一个标量，dz/dz=1
+x=V(t.arange(0.,3),requires_grad=True)
+y=x**2+x*2
+z=y.sum()
+# 从z开始反向传播
+# error
+
+# z_grad_variables=V(t.tensor([1]))
+# print(z_grad_variables,z_grad_variables.dtype)
+# z.backward(z_grad_variables)
+# print(x.grad)
+
+z_grad_variables=t.tensor(1,dtype=t.float)
+print(z_grad_variables,z_grad_variables.dtype,z_grad_variables.shape)
+z.backward(z_grad_variables)
+print(x.grad)
+
+
+x=V(t.arange(0.,3),requires_grad=True)
+y=x**2+x*2
+z=y.sum()
+y_grad_variables=V(t.tensor([1,1,1]))
+print(y_grad_variables,y_grad_variables.dtype,y_grad_variables.shape)
+y.backward(y_grad_variables)
+print(x.grad)
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+tensor(1.) torch.float32 torch.Size([])
+tensor([2., 4., 6.])
+tensor([1, 1, 1]) torch.int64 torch.Size([3])
+tensor([2., 4., 6.])
+
+Process finished with exit code 0
+
+
+
+
+
+
+
+
+
+
+
+
