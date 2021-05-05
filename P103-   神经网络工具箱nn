@@ -1,0 +1,138 @@
+
+
+1. nn.Module
+
+torch.nn 是专门为深度学习设计的模块，核心数据结构是Module，它是一个抽象的概念，
+既可以表示神经网络中的某个层(layer),也可以表示一个包含很多层的神经网络。
+在实际应用中，最常见的做法是继承nn.Module，撰写自己的网络/层。
+
+#  Module实现的全连接层，比利用Function实现的更简单，
+#  因为它不需要写反向传播函数
+
+import torch as t
+from torch import nn
+from torch.autograd import Variable as V
+
+t.manual_seed(1000)
+
+
+# 1. 自定义Linear 必须继承nn.Module
+#  并且在构造函数中需要调用nn.Module的构造函数
+#   super(Linear,self).__init__()
+#   or   nn.Module.__init__(self)
+
+# 2. 在构造函数__init__中必须自己定义可学习的参数，
+#   并封装成Parameter(特殊 Variable) ，默认需要求导。
+
+# 3. forward 前向传播，输入可以是多个Variable
+
+# 4. 无需写反向传播函数，nn.Module利用autograd自动实现反向传播
+
+# 5. 将layer可以看成数学概念中的函数，调用layer(input)即
+#   可以得到对应结果，等价 layers.__call__(input)
+#   在 __call__函数中，主要调用的是layer.forward(x)。
+
+# 6. Module中的科学系参数通过 named_parameters()
+#   或者parameters()返回迭代器，前者给parameter附上名字
+
+
+class Linear(nn.Module):  # 继承 nn.Module
+    def __init__(self, in_features, out_features):
+        # 等价于 nn.Module.__init__(self)
+        super(Linear, self).__init__()
+        self.w = nn.Parameter(t.randn(in_features, out_features))
+        print(self.w.shape)
+        self.b = nn.Parameter(t.randn(out_features))
+        print(self.b.shape)
+        # # error: cannot resize variables that require grad
+        # print(self.b.shape)
+        # self.b.resize_(2,3)
+        # print(self.b.size())
+
+    def forward(self, x):
+        x = x.mm(self.w)
+        # print(self.b.expand_as(x).shape)
+        # print(x.shape)
+        return x + self.b.expand_as(x)
+
+
+layer = Linear(4, 3)
+input = V(t.randn(2, 4))
+output = layer(input)
+print(output)
+
+#  named_parameters 参数有名字
+for name, parameter in layer.named_parameters():
+    print(name, parameter)  # w and b
+#  parameters 参数没名字
+for parameter in layer.parameters():
+    print(parameter)  # w and b
+
+
+class Perceptron(nn.Module):
+    def __init__(self, in_features, hidden_features, out_features):
+        nn.Module.__init__(self)
+        # super(Linear, self).__init__()
+        # 此处的Linear是前面自定义的全连接层
+        self.layer1 = Linear(in_features, hidden_features)
+        self.layer2 = Linear(hidden_features, out_features)
+
+    def forward(self, x):
+        print("hello", x)
+        x = self.layer1(x)
+        print("world", x)
+        x = t.sigmoid(x)
+        return self.layer2(x)
+
+
+perceptron = Perceptron(3, 4, 1)
+for name, param in perceptron.named_parameters():
+    print(name, param.size())
+
+input1 = V(t.randn(2, 3))
+output1 = perceptron.layer1(input1)
+output2 = perceptron.layer2(output1)
+print(output2)
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+torch.Size([4, 3])
+torch.Size([3])
+tensor([[ 2.9238,  3.0967,  0.4950],
+        [-0.5025, -0.0759, -0.9008]], grad_fn=<AddBackward0>)
+w Parameter containing:
+tensor([[-1.1720, -0.3929,  0.5265],
+        [ 1.1065,  0.9273, -1.7421],
+        [-0.7699,  0.7864, -1.9963],
+        [ 0.5836,  1.0392,  0.8023]], requires_grad=True)
+b Parameter containing:
+tensor([0.5269, 0.5730, 0.1390], requires_grad=True)
+Parameter containing:
+tensor([[-1.1720, -0.3929,  0.5265],
+        [ 1.1065,  0.9273, -1.7421],
+        [-0.7699,  0.7864, -1.9963],
+        [ 0.5836,  1.0392,  0.8023]], requires_grad=True)
+Parameter containing:
+tensor([0.5269, 0.5730, 0.1390], requires_grad=True)
+torch.Size([3, 4])
+torch.Size([4])
+torch.Size([4, 1])
+torch.Size([1])
+layer1.w torch.Size([3, 4])
+layer1.b torch.Size([4])
+layer2.w torch.Size([4, 1])
+layer2.b torch.Size([1])
+tensor([[-2.2768],
+        [-3.0801]], grad_fn=<AddBackward0>)
+
+Process finished with exit code 0
+
+
+
+多层感知机：
+
+多层感知器（Multilayer Perceptron,缩写MLP）是一种前向结构的人工神经网络，映射一组输入向量到一组输出向量。
+MLP可以被看作是一个有向图，由多个的节点层所组成，每一层都全连接到下一层。 除了输入节点，每个节点都是一个带有非线性激活函数的神经元（或称处理单元）。
+
+程序中的输入是：输入数据作为列向量是layer1(只有输出)，经过wx+b，得到layer2中激活前的值，在layer2中通过激活函数得到激活后的值，然后wx+b得到输出结果。
