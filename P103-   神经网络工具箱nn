@@ -136,3 +136,128 @@ Process finished with exit code 0
 MLP可以被看作是一个有向图，由多个的节点层所组成，每一层都全连接到下一层。 除了输入节点，每个节点都是一个带有非线性激活函数的神经元（或称处理单元）。
 
 程序中的输入是：输入数据作为列向量是layer1(只有输出)，经过wx+b，得到layer2中激活前的值，在layer2中通过激活函数得到激活后的值，然后wx+b得到输出结果。
+
+
+
+2. 常用的神经网络层
+
+2.1 图像相关层
+
+from PIL import Image
+from torchvision.transforms import ToTensor,ToPILImage
+from matplotlib import pyplot as plt
+import torch as t
+from torch import nn
+from torch.autograd import Variable as V
+
+to_tensor=ToTensor() # img->tensor
+to_pil=ToPILImage()
+lena=Image.open('..//imgs//lena.png')
+plt.imshow(lena)
+# plt.show()
+
+# 输入一个batch，batch_size=1
+input=to_tensor(lena).unsqueeze(0)
+# print(input.shape)
+# to_pil(input).show()
+# to_pil(input.data.squeeze(0)).show()
+input=input.view(1,1,-1,225)
+print(input.shape)
+# to_pil(input.data.squeeze(0)).show()
+
+
+# 锐化卷积和
+kernel=t.ones(3,3)/-9.
+kernel[1][1]=1  # 卷积核中心点设置为1
+conv=nn.Conv2d(1,1,(3,3),bias=False)
+conv.weight.data=kernel.view(1,1,3,3)
+
+out=conv(V(input))
+print(out.data.squeeze(0).shape)
+# to_pil(out.data.squeeze(0)).show()
+
+pool=nn.AvgPool2d(2,2)
+print(list(pool.parameters()))
+
+out=out.unsqueeze(0)
+out=pool(V(input))
+to_pil(out.data.squeeze(0)).show()
+
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+torch.Size([1, 1, 675, 225])
+torch.Size([1, 673, 223])
+[]
+
+Process finished with exit code 0
+
+
+
+
+
+
+
+
+from torch.autograd import Variable as V
+import torch as t
+from torch import nn
+
+
+# batch_size=4,维度是3
+# t.manual_seed(0)
+# input = V(t.randn(2,3))
+input=V(t.arange(1.,7).view(2,3))
+print(input)
+linear=nn.Linear(3,4)
+h=linear(input)
+print("h=",h,h.shape)
+# h=h.view(4,4)
+
+# 4 channels   初始化标准差为4，均值为0
+
+bn=nn.BatchNorm1d(4)
+print("bn",bn)
+bn.weight.data=t.ones(4)*4
+print("bn.weight=",bn.weight.data)
+bn.bias.data=t.zeros(4)
+print(bn.bias.data)
+
+bn_out=bn(h)
+print("bn_out",bn_out)
+print(bn_out.mean(0),bn_out.var(0,unbiased=False))
+
+
+#  每个元素 以 0.5 的概率舍弃   有0.5的概率一半左右的数变为0
+dropout = nn.Dropout(0.5)
+o=dropout(bn_out)
+print("o=",o)
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+tensor([[1., 2., 3.],
+        [4., 5., 6.]])
+h= tensor([[-0.4076,  0.3815,  2.3756, -0.8790],
+        [ 0.0761,  1.2916,  4.8339, -2.6169]], grad_fn=<AddmmBackward>) torch.Size([2, 4])
+bn BatchNorm1d(4, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+bn.weight= tensor([4., 4., 4., 4.])
+tensor([0., 0., 0., 0.])
+bn_out tensor([[-3.9997, -3.9999, -4.0000,  4.0000],
+        [ 3.9997,  3.9999,  4.0000, -4.0000]],
+       grad_fn=<NativeBatchNormBackward>)
+tensor([0.0000e+00, 0.0000e+00, 0.0000e+00, 3.5763e-07],
+       grad_fn=<MeanBackward1>) tensor([15.9973, 15.9992, 15.9999, 15.9998], grad_fn=<VarBackward1>)
+o= tensor([[-7.9993, -0.0000, -0.0000,  7.9999],
+        [ 0.0000,  7.9998,  8.0000, -7.9999]], grad_fn=<MulBackward0>)
+
+Process finished with exit code 0
+
+
+
+
+
+
+
+
