@@ -260,4 +260,99 @@ Process finished with exit code 0
 2.2  
 
 
+from torch import nn
+import torch as t
+from torch.autograd import Variable as V
+
+
+t.manual_seed(1)
+relu=nn.ReLU(inplace=True)
+input=V(t.randn(2,3))
+print(input)
+output=relu(input)
+print(output)
+# .clamp 等价
+# 通过 ReLU函数，input值变得和output一样，怀疑这俩一个空间
+#  inplace 默认为 false，设置为true，输出将会直接覆盖到输入中
+print(input)
+print(input.clamp(max=0))
+
+
+# Sequential 的三种写法
+print("---Sequential---")
+net1=nn.Sequential()
+net1.add_module("conv",nn.Conv2d(3,3,3))
+net1.add_module("batchnorm",nn.BatchNorm2d(3))
+net1.add_module("activation_layer",nn.ReLU())
+
+net2=nn.Sequential(
+    nn.Conv2d(3,3,3),
+    nn.BatchNorm2d(3),
+    nn.ReLU()
+)
+
+from collections import OrderedDict
+net3=nn.Sequential(OrderedDict([("conv1",nn.Conv2d(3,3,3)),("bn1",nn.BatchNorm2d(3)),("relu1",nn.ReLU())]))
+print("net1:",net1)
+print("net2:",net2)
+print("net3:",net3)
+
+# 可以根据名字和序号取出子module
+print(net1.conv,net2[0],net3.conv1)
+print(net1.activation_layer,net2[2],net3.relu1)
+
+input=V(t.rand(1,3,4,4))
+output=net1(input)
+print(output)
+output=net2(input)
+output=net3(input)
+output=net3.relu1(net1.batchnorm(net1.conv(input)))
+
+
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+tensor([[ 0.6614,  0.2669,  0.0617],
+        [ 0.6213, -0.4519, -0.1661]])
+tensor([[0.6614, 0.2669, 0.0617],
+        [0.6213, 0.0000, 0.0000]])
+tensor([[0.6614, 0.2669, 0.0617],
+        [0.6213, 0.0000, 0.0000]])
+tensor([[0., 0., 0.],
+        [0., 0., 0.]])
+---Sequential---
+net1: Sequential(
+  (conv): Conv2d(3, 3, kernel_size=(3, 3), stride=(1, 1))
+  (batchnorm): BatchNorm2d(3, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (activation_layer): ReLU()
+)
+net2: Sequential(
+  (0): Conv2d(3, 3, kernel_size=(3, 3), stride=(1, 1))
+  (1): BatchNorm2d(3, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (2): ReLU()
+)
+net3: Sequential(
+  (conv1): Conv2d(3, 3, kernel_size=(3, 3), stride=(1, 1))
+  (bn1): BatchNorm2d(3, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (relu1): ReLU()
+)
+Conv2d(3, 3, kernel_size=(3, 3), stride=(1, 1)) Conv2d(3, 3, kernel_size=(3, 3), stride=(1, 1)) Conv2d(3, 3, kernel_size=(3, 3), stride=(1, 1))
+ReLU() ReLU() ReLU()
+tensor([[[[0.0000, 0.0000],
+          [1.4725, 0.2500]],
+
+         [[0.0000, 0.0000],
+          [0.0000, 1.6477]],
+
+         [[0.1241, 1.4152],
+          [0.0000, 0.0000]]]], grad_fn=<ReluBackward0>)
+
+Process finished with exit code 0
+
+
+
+
+
+
 
