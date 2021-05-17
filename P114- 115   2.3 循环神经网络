@@ -190,5 +190,60 @@ Process finished with exit code 0
 
 
 
+from torch import nn
+from torch.autograd import Variable as V
+import torch as t
+
+t.manual_seed(1)
+# # batch_size=3
+#
+# score=V(t.ones(3,3))
+# print(score)
+#
+# # 三个样本属于1，0，1类，label必须是LongTensor
+#
+# label=V(t.Tensor([1,0,1])).long()
+# print(label)
+#
+# # loss 与 普通的layer无差异
+#
+# criterion= nn.ReLU()
+# loss=criterion(score)
+# print(loss)
+
+
+
+
+# batch_size=3
+
+score=V(t.randn(4,3))
+print(score)
+
+# 三个样本属于1，0，1类，label必须是LongTensor
+
+label=V(t.Tensor([0,1,0,1])).long()
+print(label)
+
+# loss 与 普通的layer无差异
+
+criterion= nn.CrossEntropyLoss()
+loss=criterion(score,label)
+print(loss)
+
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+tensor([[ 0.6614,  0.2669,  0.0617],
+        [ 0.6213, -0.4519, -0.1661],
+        [-1.5228,  0.3817, -1.0276],
+        [-0.5631, -0.8923, -0.0583]])
+tensor([0, 1, 0, 1])
+tensor(1.5601)
+
+Process finished with exit code 0
+
+
+
 
 
