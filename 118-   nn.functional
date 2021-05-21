@@ -1,0 +1,93 @@
+
+
+nn.functional 中的函数更像是纯函数，由def function（input）  定义
+
+nn.Module 实现的layers是一个特殊的类，都是由class layer（nn.Module）定义，会自动提取
+可学习的参数
+
+
+import torch as t
+from torch import nn
+from torch.autograd import Variable as V
+
+input=V(t.randn(2,3))
+model=nn.Linear(3,4)
+output1=model(input)
+output2=nn.functional.linear(input,model.weight,model.bias)
+print(output1==output2)
+
+b=nn.functional.relu(input)
+b2=nn.ReLU()(input)
+print(b==b2)
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+tensor([[True, True, True, True],
+        [True, True, True, True]])
+tensor([[True, True, True],
+        [True, True, True]])
+
+Process finished with exit code 0
+
+
+在没有可学习参数的情况下，nn.functional 和 nn.Module可以混合使用，
+比如：
+（激活函数 ReLU、Sigmoid、tanh）、
+池化（MaxPool）等层没有可学习的参数。
+
+而 卷积、全连接等具有可学习参数的网络建议使用nn.Module,另外 虽然
+nn.droput操作也没有可学习的参数，但建议还是使用nn.Dropout而不是nn.functional.droput，
+因为dropout在训练和测试两个阶段的行为有所差别，使用nn.Module对象能够通过model.eval等操作加以区分。
+
+
+
+import torch as t
+from torch import nn
+from torch.autograd import Variable as V
+
+
+from torch.nn import functional as F
+class Net(nn.Module):
+    def __init__(self):
+        super(Net,self).__init__()
+        self.conv1=nn.Conv2d(3,6,5)
+        self.conv2=nn.Conv2d(6,16,5)
+        self.fc1=nn.Linear(16*5*5,120)
+        self.fc2=nn.Linear(120,84)
+        self.fc3=nn.Linear(84,10)
+    def forward(self,x):
+        x=F.pool(F.relu(self.conv1(x)),2)
+        x=F.pool(F.relu(self.conv2(x)),2)
+        x=x.view(-1,16*5*5)
+        x=F.relu(self.fc1(x))
+        x=F.relu(self.fc2(x))
+        x=self.fc3(x)
+        return x
+
+
+
+class MyLinear(nn.Module):
+    def __init__(self):
+        super(MyLinear,self).__init__()
+        self.weight=nn.Parameter(t.randn(3,4))
+        self.bias=nn.Parameter(t.zeros(3))
+    def forward(self):
+        return F.linear(input,weight,bias)
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+tensor([[True, True, True, True],
+        [True, True, True, True]])
+tensor([[True, True, True],
+        [True, True, True]])
+
+Process finished with exit code 0
+
+
+
+不具备可学习参数的层（激活层、池化层等），将他们用函数代替，这样可以不用放置在构造函数 __init__ 中，
+有可学习参数的模块，也可以用functional代替，只不过实现起来比较繁琐，需要手动定义参数parameter，
+如前面实现自定义的全连接层，就可以将weight和bias两个参数单独拿出来，在构造函数中初始化为parameter。
+
