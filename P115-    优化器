@@ -1,3 +1,7 @@
+1. 优化方法的基本使用方法
+2. 如何对模型的不同部分设置不同的学习率
+3. 如何调整学习率
+
 
 import torch as t
 import torch.nn as nn
@@ -77,3 +81,12 @@ optimizer=t.optim.SGD([
 <function <lambda> at 0x7efee0de68c0>
 
 Process finished with exit code 0
+
+
+
+
+
+
+
+
+
