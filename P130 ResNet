@@ -298,3 +298,29 @@ torch.Size([1, 1000])
 
 Process finished with exit code 0
 
+
+
+
+
+
+
+
+
+当然，与 Pytorch 配套的图像工具包torchvision 易经实现了深度学习中大多数经典的模型，
+其中就包括 ResNet34，可以通过以下代码使用：
+
+from torchvision import models
+import torch as t
+model = models.resnet34()
+o=model(t.randn(3,3,3,3))
+print(o,o.shape)
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+tensor([[-1.0203, -0.1896, -0.3845,  ..., -0.1285,  1.0731, -0.4883],
+        [-2.4063,  0.3272,  0.5353,  ..., -0.9063,  0.4161,  0.9797],
+        [-0.8344, -0.2085,  0.5996,  ..., -0.3980,  0.0147,  1.3197]],
+       grad_fn=<AddmmBackward>) torch.Size([3, 1000])
+
+Process finished with exit code 0
+
