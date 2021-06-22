@@ -1,0 +1,92 @@
+
+import torch as t
+from torch import nn
+from torch.autograd import Variable as V
+
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net,self).__init__()
+        # 等价于 self.register_parameter('param1',nn.Parameter(t.randn(3,3))
+        # 注意： 此处的param1 是人为设定的一个矩阵，并不是权重W
+        self.param1=nn.Parameter(t.rand(3,3))
+        self.submodel1=nn.Linear(in_features=3,out_features=4)
+    def forward(self,input):
+        x=self.param1@input
+        x=self.submodel1(x)
+        return x
+net=Net()
+print(net)
+
+print(net._modules)
+print(net._parameters)
+# 等价于 net._parameters["param1"]
+# print(net.param1)
+
+for name,param in net.named_parameters():
+    print(name,param.size())
+
+for name, submodel in net.named_modules():
+    print(name,submodel)
+
+bn=nn.BatchNorm1d(2)
+input=V(t.rand(3,2),requires_grad=True)
+output=bn(input)
+print(bn._buffers)
+
+
+
+print(t.arange(0,12).view(3,4).int().type())
+model=nn.Dropout()
+# 训练阶段，会有一半左右的数被随机设置为0
+print(model(input))
+
+# 测试阶段，dropout 什么都不做
+model.training=False
+print(model(input))
+
+print(net.training,net.submodel1.training)
+net.train()
+print(net.training,net.submodel1.training)
+net.eval()
+print(net.training,net.submodel1.training)
+
+print(list(net.named_modules()))
+
+
+
+
+
+
+/home/wangbin/anaconda3/envs/deep_learning/bin/python3.7 /home/wangbin/anaconda3/envs/deep_learning/project/main.py
+Net(
+  (submodel1): Linear(in_features=3, out_features=4, bias=True)
+)
+OrderedDict([('submodel1', Linear(in_features=3, out_features=4, bias=True))])
+OrderedDict([('param1', Parameter containing:
+tensor([[0.3645, 0.2058, 0.2515],
+        [0.9805, 0.0255, 0.1410],
+        [0.1756, 0.1193, 0.4344]], requires_grad=True))])
+param1 torch.Size([3, 3])
+submodel1.weight torch.Size([4, 3])
+submodel1.bias torch.Size([4])
+ Net(
+  (submodel1): Linear(in_features=3, out_features=4, bias=True)
+)
+submodel1 Linear(in_features=3, out_features=4, bias=True)
+OrderedDict([('running_mean', tensor([0.0475, 0.0876])), ('running_var', tensor([0.9183, 0.9008])), ('num_batches_tracked', tensor(1))])
+torch.IntTensor
+tensor([[0.9329, 1.6080],
+        [0.1037, 0.0000],
+        [0.0000, 0.0000]], grad_fn=<MulBackward0>)
+tensor([[0.4664, 0.8040],
+        [0.0519, 0.8495],
+        [0.9072, 0.9755]], requires_grad=True)
+True True
+True True
+False False
+[('', Net(
+  (submodel1): Linear(in_features=3, out_features=4, bias=True)
+)), ('submodel1', Linear(in_features=3, out_features=4, bias=True))]
+
+Process finished with exit code 0
